@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Culinary Logic Puzzle - Recipe Admin</title>
+    
+    <!-- Bootstrap CSS for styling -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        body {
+            padding: 20px;
+            background-color: #f5f1e8;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3 {
+            color: #778F5D; /* Avocado green */
+        }
+        .btn-primary {
+            background-color: #778F5D;
+            border-color: #778F5D;
+        }
+        .btn-primary:hover {
+            background-color: #667c4e;
+            border-color: #667c4e;
+        }
+        .btn-secondary {
+            background-color: #D96941; /* Burnt orange */
+            border-color: #D96941;
+        }
+        .btn-secondary:hover {
+            background-color: #c55e39;
+            border-color: #c55e39;
+        }
+        .btn-warning {
+            background-color: #E2B33C; /* Mustard yellow */
+            border-color: #E2B33C;
+            color: white;
+        }
+        .btn-warning:hover {
+            background-color: #d1a32f;
+            border-color: #d1a32f;
+            color: white;
+        }
+        .ingredient-item, .combination-item {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #778F5D;
+        }
+        .preview-container {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .vessel {
+            display: inline-block;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 8px;
+            color: black;
+            font-weight: bold;
+            text-align: center;
+        }
+        .vessel-white {
+            background-color: #F9F5EB;
+            border: 1px solid #ddd;
+        }
+        .vessel-yellow {
+            background-color: #E2B33C;
+            color: white;
+        }
+        .vessel-green {
+            background-color: #778F5D;
+            color: white;
+        }
+        .combination-arrow {
+            display: inline-block;
+            font-size: 24px;
+            margin: 0 10px;
+            vertical-align: middle;
+        }
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 30px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        #error-message {
+            color: #D96941;
+            font-weight: bold;
+        }
+        #success-message {
+            color: #778F5D;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Form (shown by default) -->
+    <div id="login-section" class="login-container">
+        <h2 class="mb-4">Recipe Admin Login</h2>
+        <div id="login-error" class="alert alert-danger d-none"></div>
+        <form id="login-form">
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Login</button>
+        </form>
+    </div>
+
+    <!-- Main Admin Interface (hidden until logged in) -->
+    <div id="admin-section" class="container d-none">
+        <h1 class="mb-4">Culinary Logic Puzzle - Recipe Admin</h1>
+        <p>Use this interface to create and upload new recipe puzzles to the game.</p>
+        
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div id="error-message" class="mb-3 d-none"></div>
+                <div id="success-message" class="mb-3 d-none"></div>
+                <button id="logout-btn" class="btn btn-outline-secondary mb-3">Logout</button>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="mb-0">Create New Recipe Puzzle</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="recipe-form">
+                            <!-- Basic Recipe Information -->
+                            <div class="mb-4">
+                                <h4>Recipe Information</h4>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="recipe-name" class="form-label">Recipe Name</label>
+                                            <input type="text" class="form-control" id="recipe-name" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="recipe-url" class="form-label">Recipe URL</label>
+                                            <input type="url" class="form-control" id="recipe-url" placeholder="https://example.com/recipe">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="recipe-date" class="form-label">Publication Date</label>
+                                            <input type="date" class="form-control" id="recipe-date" required>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Intermediate Combinations -->
+                            <div class="mb-4">
+                                <h4>Intermediate Combinations</h4>
+                                <p>Create combinations that will be used to build the final recipe.</p>
+                                
+                                <div id="combinations-container">
+                                    <!-- Combinations will be added here dynamically -->
+                                </div>
+                                
+                                <button type="button" id="add-combination-btn" class="btn btn-outline-primary">
+                                    Add Combination
+                                </button>
+                            </div>
+                            
+                            <!-- Final Recipe -->
+                            <div class="mb-4">
+                                <h4>Final Recipe</h4>
+                                <p>Select which combinations are required for the final recipe.</p>
+                                
+                                <div id="final-recipe-container" class="mb-3">
+                                    <div class="mb-3">
+                                        <label class="form-label">Required Combinations</label>
+                                        <div id="final-combinations-list" class="mb-3">
+                                            <!-- Will be populated with checkboxes for each intermediate combination -->
+                                            <div class="form-text text-muted">Add intermediate combinations first</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Preview Section -->
+                            <div class="mb-4">
+                                <h4>Recipe Preview</h4>
+                                <button type="button" id="generate-preview-btn" class="btn btn-outline-secondary mb-3">
+                                    Generate Preview
+                                </button>
+                                
+                                <div id="preview-container" class="preview-container d-none">
+                                    <!-- Preview will be generated here -->
+                                </div>
+                            </div>
+                            
+                            <!-- Submit Buttons -->
+                            <div class="d-flex justify-content-between">
+                                <button type="button" id="clear-form-btn" class="btn btn-outline-danger">
+                                    Clear Form
+                                </button>
+                                <button type="button" id="test-recipe-btn" class="btn btn-warning">
+                                    Test Recipe
+                                </button>
+                                <button type="submit" id="save-recipe-btn" class="btn btn-primary">
+                                    Save Recipe
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Templates (hidden) -->
+    <template id="combination-template">
+        <div class="combination-item mb-3" data-combination-id="{id}">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Combination Name</label>
+                        <input type="text" class="form-control combination-name" required>
+                    </div>
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-danger remove-combination-btn mb-3">
+                        Remove Combination
+                    </button>
+                </div>
+            </div>
+            
+            <div class="ingredients-container">
+                <!-- Ingredients will be added here -->
+            </div>
+            
+            <button type="button" class="btn btn-outline-secondary add-ingredient-btn">
+                Add Ingredient
+            </button>
+        </div>
+    </template>
+    
+    <template id="ingredient-template">
+        <div class="ingredient-item mb-2" data-ingredient-id="{id}">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-2">
+                        <label class="form-label">Ingredient Name</label>
+                        <input type="text" class="form-control ingredient-name" required>
+                    </div>
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-ingredient-btn mb-2">
+                        Remove
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+    
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Recipe Admin JavaScript -->
+    <script src="js/recipe-admin.js"></script>
+</body>
+</html> 
